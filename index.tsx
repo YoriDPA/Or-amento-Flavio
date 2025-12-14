@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { GoogleGenAI, Type } from "@google/genai";
-import { Zap, User, Printer, Share2, FilePlus, Settings, AlertCircle, Briefcase, Eye, Edit3, MessageCircle, Download, Sparkles, Loader2, Plus, Trash2, GripVertical, Save } from 'lucide-react';
+import { Zap, User, Printer, Share2, FilePlus, Settings, AlertCircle, Briefcase, Eye, Edit3, MessageCircle, Download, Sparkles, Loader2, Plus, Trash2, GripVertical, Save, Upload, X } from 'lucide-react';
 
 // --- TYPES ---
 interface ServiceItem {
@@ -25,6 +25,7 @@ interface ProfessionalData {
   name: string;
   title: string;
   phone: string;
+  logo?: string; // Base64 ou URL (./logo.png)
 }
 
 interface GeneratedSuggestion {
@@ -378,6 +379,8 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ items, setItems }) => {
 // --- MAIN APP COMPONENT ---
 
 const App: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [client, setClient] = useState<ClientData>(() => {
     const saved = localStorage.getItem('eo_client');
     return saved ? JSON.parse(saved) : {
@@ -392,10 +395,15 @@ const App: React.FC = () => {
   
   const [professional, setProfessional] = useState<ProfessionalData>(() => {
     const saved = localStorage.getItem('eo_professional');
-    return saved ? JSON.parse(saved) : {
-      name: 'Flavio',
-      title: 'Eletricista Profissional',
-      phone: ''
+    const parsed = saved ? JSON.parse(saved) : {};
+    
+    // Configuração inicial com valores padrão
+    return {
+      name: parsed.name || 'Flávio Silva',
+      title: parsed.title || 'Eletricista Profissional',
+      phone: parsed.phone || '',
+      // Se tiver uma logo salva (base64) usa ela, senão tenta usar o arquivo fixo logo.png
+      logo: parsed.logo || './logo.png'
     };
   });
 
@@ -413,6 +421,7 @@ const App: React.FC = () => {
   const [activeMobileTab, setActiveMobileTab] = useState<'edit' | 'preview'>('edit');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   useEffect(() => {
       const handler = (e: any) => {
@@ -440,6 +449,37 @@ const App: React.FC = () => {
           setApiKey(tempKey.trim());
           setTempKey('');
           alert("Chave salva com sucesso!");
+      }
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        // Verifica tamanho (limite seguro para localStorage ~2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert("A imagem é muito grande. Tente uma menor que 2MB.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64 = reader.result as string;
+            setProfessional(prev => ({ ...prev, logo: base64 }));
+            setLogoError(false);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+      if (confirm("Voltar para a logo padrão (logo.png)?")) {
+          setProfessional(prev => {
+              const newData = { ...prev };
+              // Força o retorno para o arquivo padrão
+              newData.logo = './logo.png';
+              return newData;
+          });
+          setLogoError(false); // Reseta erro para tentar carregar o arquivo padrão novamente
       }
   };
 
@@ -518,6 +558,22 @@ const App: React.FC = () => {
     window.open(url, '_blank');
   };
 
+  // Helper para renderizar a logo com tratamento de erro
+  const renderLogo = (className: string) => {
+    if (professional.logo && !logoError) {
+        return (
+            <img 
+                src={professional.logo} 
+                alt="Logo Profissional" 
+                className={className} 
+                onError={() => setLogoError(true)}
+            />
+        );
+    }
+    // Fallback se não tiver logo ou der erro (ex: arquivo logo.png não existe)
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 pb-20">
       <nav className="bg-electric-600 text-white shadow-lg sticky top-0 z-50 no-print">
@@ -527,8 +583,8 @@ const App: React.FC = () => {
               <div className="p-2 bg-white rounded-full">
                  <Zap className="h-6 w-6 text-electric-600" />
               </div>
-              <span className="font-bold text-xl tracking-tight hidden sm:inline">EletroOrça AI</span>
-              <span className="font-bold text-lg tracking-tight sm:hidden">EletroOrça</span>
+              <span className="font-bold text-xl tracking-tight hidden sm:inline">Flávio Silva</span>
+              <span className="font-bold text-lg tracking-tight sm:hidden">Flávio Silva</span>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               {showInstallBtn && (
@@ -614,7 +670,48 @@ const App: React.FC = () => {
                 <Briefcase className="text-electric-500" />
                 Seus Dados
               </h2>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Logo Uploader */}
+                <div className="col-span-1 md:col-span-2 mb-2">
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Sua Logo / Marca</label>
+                    <div className="flex items-center gap-4">
+                        {(!logoError && professional.logo) ? (
+                            <div className="relative">
+                                {renderLogo("h-16 w-auto object-contain border rounded p-1")}
+                                <button 
+                                    onClick={handleRemoveLogo}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-sm"
+                                    title="Voltar para logo padrão"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="h-16 w-16 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400">
+                                <Zap className="w-6 h-6" />
+                            </div>
+                        )}
+                        <div>
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                onChange={handleLogoUpload}
+                            />
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="text-sm bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded font-medium flex items-center gap-2 transition-colors"
+                            >
+                                <Upload className="w-4 h-4" /> 
+                                {professional.logo !== './logo.png' && !logoError ? 'Trocar Logo' : 'Enviar Logo Personalizada'}
+                            </button>
+                            <p className="text-[10px] text-gray-500 mt-1">Dica: Salve uma imagem chamada <b>logo.png</b> no GitHub para usar como padrão.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Seu Nome</label>
                   <input
@@ -765,13 +862,25 @@ const App: React.FC = () => {
           <div className={`lg:sticky lg:top-24 h-fit ${activeMobileTab === 'edit' ? 'hidden lg:block' : 'block'}`}>
             <div className="bg-white shadow-2xl rounded-none sm:rounded-lg overflow-hidden border border-gray-200 print-section" id="quote-preview">
                 <div className="bg-gray-800 text-white p-4 sm:p-6 border-b-4 border-electric-500">
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">ORÇAMENTO</h1>
-                            <p className="text-electric-400 font-medium mt-1 text-sm sm:text-base">SERVIÇOS ELÉTRICOS</p>
+                             {/* Lógica de exibição da logo: Customizada ou Padrão ou Texto */}
+                             {(!logoError && professional.logo) ? (
+                                <div className="mb-2">
+                                    {renderLogo("h-16 w-auto object-contain")}
+                                </div>
+                             ) : (
+                                <>
+                                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">ORÇAMENTO</h1>
+                                    <p className="text-electric-400 font-medium mt-1 text-sm sm:text-base">SERVIÇOS ELÉTRICOS</p>
+                                </>
+                             )}
                         </div>
                         <div className="text-right">
-                            <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-electric-400 ml-auto mb-2" />
+                             {/* Se não tiver logo na esquerda (ou se deu erro no load), mostra o raio na direita */}
+                            {(logoError || !professional.logo) && (
+                                <Zap className="h-8 w-8 sm:h-10 sm:w-10 text-electric-400 ml-auto mb-2" />
+                            )}
                             <p className="text-xs sm:text-sm text-gray-300">Data: {new Date(client.date).toLocaleDateString('pt-BR')}</p>
                             <p className="text-xs sm:text-sm text-gray-300">Validade: {client.validity}</p>
                         </div>
@@ -846,6 +955,7 @@ const App: React.FC = () => {
             </div>
             
             <div className="mt-4 text-center no-print">
+               <p className="text-xs text-gray-400 mb-2">Orçamento emitido por Flávio Silva</p>
                <button 
                 onClick={handlePrint}
                 className="lg:hidden w-full py-3 bg-electric-600 hover:bg-electric-700 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2"
