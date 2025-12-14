@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { GoogleGenAI, Type } from "@google/genai";
-import { Zap, User, Printer, Share2, FilePlus, Settings, AlertCircle, Briefcase, Eye, Edit3, MessageCircle, Download, Sparkles, Loader2, Plus, Trash2, GripVertical } from 'lucide-react';
+import { Zap, User, Printer, Share2, FilePlus, Settings, AlertCircle, Briefcase, Eye, Edit3, MessageCircle, Download, Sparkles, Loader2, Plus, Trash2, GripVertical, Save } from 'lucide-react';
 
 // --- TYPES ---
 interface ServiceItem {
@@ -35,12 +35,19 @@ interface GeneratedSuggestion {
 }
 
 // --- SERVICE: Gemini ---
-// Acessa a chave globalmente injetada pelo index.html ou process.env se disponível
-const API_KEY = (window as any).process?.env?.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Função auxiliar para pegar a chave do LocalStorage ou do ambiente
+const getApiKey = () => localStorage.getItem('eo_api_key') || (window as any).process?.env?.API_KEY || '';
+
+// Criamos o cliente apenas quando necessário para evitar erro se a chave não existir no inicio
+const getGenAI = () => {
+  const key = getApiKey();
+  if (!key) return null;
+  return new GoogleGenAI({ apiKey: key });
+};
 
 const suggestServices = async (jobDescription: string): Promise<GeneratedSuggestion[]> => {
-  if (!API_KEY) {
+  const ai = getGenAI();
+  if (!ai) {
     console.warn("API Key is missing for Gemini suggestions.");
     return [];
   }
@@ -86,7 +93,8 @@ const generateProfessionalMessage = async (
   itemsCount: number,
   notes: string
 ): Promise<string> => {
-    if (!API_KEY) return `Olá ${clientName}, segue o orçamento no valor de R$ ${totalValue.toFixed(2)}.`;
+    const ai = getGenAI();
+    if (!ai) return `Olá ${clientName}, segue o orçamento no valor de R$ ${totalValue.toFixed(2)}.`;
 
     try {
         const response = await ai.models.generateContent({
@@ -127,6 +135,9 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onAddItems }) => {
 
     try {
       const results = await suggestServices(prompt);
+      if (results.length === 0) {
+          setError("Não foi possível gerar sugestões. Verifique a API Key.");
+      }
       setSuggestions(results);
     } catch (err) {
       setError("Erro ao conectar com a IA.");
@@ -177,6 +188,8 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onAddItems }) => {
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sugerir'}
           </button>
         </div>
+        
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
 
         {suggestions.length > 0 && (
           <div className="mt-4 bg-white p-4 rounded-lg border border-electric-200">
@@ -390,10 +403,13 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('eo_items');
     return saved ? JSON.parse(saved) : [];
   });
+  
+  // Estado para armazenar a chave da API
+  const [apiKey, setApiKey] = useState<string>(getApiKey());
+  const [tempKey, setTempKey] = useState('');
 
   const [generatedMessage, setGeneratedMessage] = useState<string>('');
   const [isGeneratingMsg, setIsGeneratingMsg] = useState(false);
-  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
   const [activeMobileTab, setActiveMobileTab] = useState<'edit' | 'preview'>('edit');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
@@ -418,6 +434,15 @@ const App: React.FC = () => {
       setDeferredPrompt(null);
   };
 
+  const handleSaveKey = () => {
+      if(tempKey.trim()){
+          localStorage.setItem('eo_api_key', tempKey.trim());
+          setApiKey(tempKey.trim());
+          setTempKey('');
+          alert("Chave salva com sucesso!");
+      }
+  };
+
   useEffect(() => {
     localStorage.setItem('eo_client', JSON.stringify(client));
   }, [client]);
@@ -431,12 +456,6 @@ const App: React.FC = () => {
   }, [items]);
 
   const subtotal = items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-
-  useEffect(() => {
-    if (!API_KEY) {
-      setShowApiKeyWarning(true);
-    }
-  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -459,6 +478,10 @@ const App: React.FC = () => {
   };
 
   const handleGenerateMessage = async () => {
+    if (!apiKey) {
+        alert("Por favor, configure sua API Key no topo da página primeiro.");
+        return;
+    }
     setIsGeneratingMsg(true);
     const msg = await generateProfessionalMessage(
         client.name, 
@@ -548,12 +571,37 @@ const App: React.FC = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {showApiKeyWarning && (
-           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r shadow-sm no-print">
-             <div className="flex items-center">
-               <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-               <p className="text-red-700 text-sm">
-                 <strong>Atenção:</strong> Configure a API Key no index.html (linha 25) para usar a IA.
+        
+        {/* Banner de Aviso e Configuração da API Key */}
+        {!apiKey && (
+           <div className="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6 rounded-r shadow-sm no-print">
+             <div className="flex flex-col gap-2">
+               <div className="flex items-center">
+                 <AlertCircle className="h-5 w-5 text-orange-500 mr-2" />
+                 <p className="text-orange-700 text-sm font-bold">
+                   Configuração Necessária
+                 </p>
+               </div>
+               <p className="text-sm text-orange-800">
+                 Para usar a Inteligência Artificial (sugestões e textos), você precisa de uma chave API do Google Gemini.
+               </p>
+               <div className="flex gap-2 mt-2">
+                 <input 
+                    type="text" 
+                    placeholder="Cole sua API Key aqui (começa com AIza...)" 
+                    value={tempKey}
+                    onChange={(e) => setTempKey(e.target.value)}
+                    className="flex-1 p-2 border border-orange-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                 />
+                 <button 
+                    onClick={handleSaveKey}
+                    className="bg-orange-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-orange-700 flex items-center gap-2"
+                 >
+                    <Save className="w-4 h-4" /> Salvar
+                 </button>
+               </div>
+               <p className="text-xs text-orange-600 mt-1">
+                 * A chave ficará salva apenas no seu celular/navegador. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline font-bold">Obter chave grátis aqui.</a>
                </p>
              </div>
            </div>

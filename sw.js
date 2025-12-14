@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eletroorca-v2'; // Versão 2 para forçar atualização
+const CACHE_NAME = 'eletroorca-v3'; // Versão 3
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
