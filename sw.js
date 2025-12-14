@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flaviosilva-v6'; // Versão 6
+const CACHE_NAME = 'eletroapp-v2'; // Versão 2
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

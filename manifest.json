@@ -1,6 +1,6 @@
 {
-  "name": "Flávio Silva Eletricista",
-  "short_name": "Flávio Silva",
+  "name": "Eletro App",
+  "short_name": "Eletro App",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f9fafb",

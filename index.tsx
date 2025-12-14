@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { GoogleGenAI, Type } from "@google/genai";
-import { Zap, User, Printer, Share2, FilePlus, Settings, AlertCircle, Briefcase, Eye, Edit3, MessageCircle, Download, Sparkles, Loader2, Plus, Trash2, GripVertical, Save, Upload, X } from 'lucide-react';
+import { GoogleGenAI } from "@google/genai";
+import { Zap, User, Printer, Share2, FilePlus, Settings, AlertCircle, Briefcase, Eye, Edit3, MessageCircle, Download, Plus, Trash2, GripVertical, Save, Upload, X } from 'lucide-react';
 
 // --- TYPES ---
 interface ServiceItem {
@@ -28,13 +28,6 @@ interface ProfessionalData {
   logo?: string; // Base64 ou URL (./logo.png)
 }
 
-interface GeneratedSuggestion {
-  description: string;
-  estimatedPrice: number;
-  unit: string;
-  reasoning?: string;
-}
-
 // --- SERVICE: Gemini ---
 // Função auxiliar para pegar a chave do LocalStorage ou do ambiente
 const getApiKey = () => localStorage.getItem('eo_api_key') || (window as any).process?.env?.API_KEY || '';
@@ -44,48 +37,6 @@ const getGenAI = () => {
   const key = getApiKey();
   if (!key) return null;
   return new GoogleGenAI({ apiKey: key });
-};
-
-const suggestServices = async (jobDescription: string): Promise<GeneratedSuggestion[]> => {
-  const ai = getGenAI();
-  if (!ai) {
-    console.warn("API Key is missing for Gemini suggestions.");
-    return [];
-  }
-
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `O usuário é um eletricista criando um orçamento. 
-      Descrição do trabalho: "${jobDescription}".
-      Liste de 3 a 6 itens de serviço ou materiais necessários para realizar este trabalho. 
-      Estime um preço unitário RAZOÁVEL em Reais (BRL) para o mercado brasileiro. 
-      Retorne JSON.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              description: { type: Type.STRING },
-              estimatedPrice: { type: Type.NUMBER },
-              unit: { type: Type.STRING },
-            },
-            required: ["description", "estimatedPrice", "unit"],
-          },
-        },
-      },
-    });
-
-    if (response.text) {
-      return JSON.parse(response.text) as GeneratedSuggestion[];
-    }
-    return [];
-  } catch (error) {
-    console.error("Error generating suggestions:", error);
-    return [];
-  }
 };
 
 const generateProfessionalMessage = async (
@@ -116,107 +67,6 @@ const generateProfessionalMessage = async (
 }
 
 // --- COMPONENTS ---
-
-// AIAssistant Component
-interface AIAssistantProps {
-  onAddItems: (items: ServiceItem[]) => void;
-}
-
-const AIAssistant: React.FC<AIAssistantProps> = ({ onAddItems }) => {
-  const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<GeneratedSuggestion[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSuggest = async () => {
-    if (!prompt.trim()) return;
-    setIsLoading(true);
-    setError(null);
-    setSuggestions([]);
-
-    try {
-      const results = await suggestServices(prompt);
-      if (results.length === 0) {
-          setError("Não foi possível gerar sugestões. Verifique a API Key.");
-      }
-      setSuggestions(results);
-    } catch (err) {
-      setError("Erro ao conectar com a IA.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAddAll = () => {
-    const newItems: ServiceItem[] = suggestions.map((s) => ({
-      id: crypto.randomUUID(),
-      description: s.description,
-      quantity: 1,
-      unitPrice: s.estimatedPrice,
-      unit: s.unit
-    }));
-    onAddItems(newItems);
-    setSuggestions([]);
-    setPrompt('');
-  };
-
-  return (
-    <div className="bg-electric-50 border border-electric-200 rounded-xl p-4 mb-6 shadow-sm">
-      <div className="flex items-center gap-2 mb-3 text-electric-800">
-        <Sparkles className="w-5 h-5" />
-        <h3 className="font-semibold">Assistente Inteligente (Gemini)</h3>
-      </div>
-      
-      <div className="space-y-3">
-        <label className="block text-sm text-electric-700">
-          Descreva o trabalho (ex: "Instalar 3 ventiladores de teto")
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSuggest()}
-            placeholder="Digite aqui..."
-            className="flex-1 px-4 py-2 border border-electric-300 rounded-lg focus:ring-2 focus:ring-electric-500 outline-none"
-            disabled={isLoading}
-          />
-          <button
-            onClick={handleSuggest}
-            disabled={isLoading || !prompt.trim()}
-            className="bg-electric-500 hover:bg-electric-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sugerir'}
-          </button>
-        </div>
-        
-        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-
-        {suggestions.length > 0 && (
-          <div className="mt-4 bg-white p-4 rounded-lg border border-electric-200">
-            <h4 className="text-sm font-semibold text-gray-700 mb-2">Sugestões:</h4>
-            <ul className="space-y-2 mb-3">
-              {suggestions.map((s, idx) => (
-                <li key={idx} className="text-sm text-gray-600 flex justify-between border-b border-gray-50 pb-1">
-                  <span>{s.description}</span>
-                  <span className="font-mono text-gray-500">R$ {s.estimatedPrice.toFixed(2)} / {s.unit}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="flex justify-end">
-                <button 
-                    onClick={handleAddAll}
-                    className="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded flex items-center gap-1"
-                >
-                    <Plus className="w-3 h-3" /> Adicionar Tudo
-                </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // QuoteForm Component
 interface QuoteFormProps {
@@ -399,7 +249,7 @@ const App: React.FC = () => {
     
     // Configuração inicial com valores padrão
     return {
-      name: parsed.name || 'Flávio Silva',
+      name: 'Flávio Silva', // Nome fixo
       title: parsed.title || 'Eletricista Profissional',
       phone: parsed.phone || '',
       // Se tiver uma logo salva (base64) usa ela, senão tenta usar o arquivo fixo logo.png
@@ -583,8 +433,8 @@ const App: React.FC = () => {
               <div className="p-2 bg-white rounded-full">
                  <Zap className="h-6 w-6 text-electric-600" />
               </div>
-              <span className="font-bold text-xl tracking-tight hidden sm:inline">Flávio Silva</span>
-              <span className="font-bold text-lg tracking-tight sm:hidden">Flávio Silva</span>
+              <span className="font-bold text-xl tracking-tight hidden sm:inline">Eletro App</span>
+              <span className="font-bold text-lg tracking-tight sm:hidden">Eletro App</span>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               {showInstallBtn && (
@@ -639,7 +489,7 @@ const App: React.FC = () => {
                  </p>
                </div>
                <p className="text-sm text-orange-800">
-                 Para usar a Inteligência Artificial (sugestões e textos), você precisa de uma chave API do Google Gemini.
+                 Para usar a Inteligência Artificial (melhoria de texto), você precisa de uma chave API do Google Gemini.
                </p>
                <div className="flex gap-2 mt-2">
                  <input 
@@ -717,8 +567,8 @@ const App: React.FC = () => {
                   <input
                     type="text"
                     value={professional.name}
-                    onChange={(e) => setProfessional({...professional, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded"
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100 text-gray-500 cursor-not-allowed"
                     placeholder="Seu Nome"
                   />
                 </div>
@@ -788,7 +638,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <AIAssistant onAddItems={(newItems) => setItems([...items, ...newItems])} />
             <QuoteForm items={items} setItems={setItems} />
             
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -955,7 +804,7 @@ const App: React.FC = () => {
             </div>
             
             <div className="mt-4 text-center no-print">
-               <p className="text-xs text-gray-400 mb-2">Orçamento emitido por Flávio Silva</p>
+               <p className="text-xs text-gray-400 mb-2">Orçamento emitido via Eletro App</p>
                <button 
                 onClick={handlePrint}
                 className="lg:hidden w-full py-3 bg-electric-600 hover:bg-electric-700 text-white rounded-lg font-bold shadow-lg flex items-center justify-center gap-2"
