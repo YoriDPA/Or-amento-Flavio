@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eletroapp-v2'; // Versão 2
+const CACHE_NAME = 'eletroapp-v3'; // Versão 3
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

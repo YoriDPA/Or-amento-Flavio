@@ -249,7 +249,7 @@ const App: React.FC = () => {
     
     // Configuração inicial com valores padrão
     return {
-      name: 'Flávio Silva', // Nome fixo
+      name: parsed.name || 'Seu Nome', 
       title: parsed.title || 'Eletricista Profissional',
       phone: parsed.phone || '',
       // Se tiver uma logo salva (base64) usa ela, senão tenta usar o arquivo fixo logo.png
@@ -567,8 +567,8 @@ const App: React.FC = () => {
                   <input
                     type="text"
                     value={professional.name}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100 text-gray-500 cursor-not-allowed"
+                    onChange={(e) => setProfessional({...professional, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-electric-500 focus:border-electric-500"
                     placeholder="Seu Nome"
                   />
                 </div>
