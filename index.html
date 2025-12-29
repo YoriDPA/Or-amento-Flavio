@@ -1,54 +1,42 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ELETROPRO - Gestão Profissional de Orçamentos</title>
-    
-    <!-- PWA Configs -->
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#f59e0b" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="EletroPro">
-    
-    <!-- Ícones -->
-    <link rel="icon" type="image/png" href="./icon.png" />
-    <link rel="apple-touch-icon" href="./icon.png">
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind via CDN for rapid development (ideally compiled in production) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            },
-            colors: {
-              amber: {
-                50: '#fffbeb',
-                100: '#fef3c7',
-                200: '#fde68a',
-                300: '#fcd34d',
-                400: '#fbbf24',
-                500: '#f59e0b',
-                600: '#d97706',
-                700: '#b45309',
-                800: '#92400e',
-                900: '#78350f',
-              }
-            }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ELETROPRO - Gestão Profissional de Orçamentos</title>
+
+  <!-- PWA Configs -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#f59e0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Ícones -->
+  <link rel="icon" type="image/png" href="./icon.png" />
+  <link rel="apple-touch-icon" href="./icon.png">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Babel para compilar TSX no navegador (Essencial para GitHub Pages sem build) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
           }
         }
       }
-    </script>
-    
-    <!-- Import Map for ESM Modules -->
-    <script type="importmap">
+    }
+  </script>
+
+  <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@19.0.0",
@@ -58,39 +46,25 @@
       }
     }
     </script>
-    
-    <!-- Custom Style Bundle -->
-    <link rel="stylesheet" href="/index.css">
-    
-    <style>
-      /* Smooth Transitions */
-      * { transition: background-color 0.2s, border-color 0.2s; }
-      
-      /* Active state for mobile touches */
-      .active-scale:active { transform: scale(0.95); }
-      
-      /* Print Setup */
-      @media print {
-        @page { size: auto; margin: 0; }
-        body { margin: 0; background: white; }
-        .no-print { display: none !important; }
-        #root { padding: 0 !important; }
-        .print-card { box-shadow: none !important; border: none !important; margin: 0 !important; border-radius: 0 !important; width: 100% !important; }
-      }
-    </style>
-  </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
-    <div id="root"></div>
-    
-    <!-- Main Application Script -->
-    <!-- Using Vite's module loader -->
-    <script type="module" src="/index.tsx"></script>
-    
-    <!-- Fallback for older browsers or simple file opening (keeping it for safety if they don't run a server) -->
-    <script>
-      if (window.location.protocol === 'file:') {
-        document.write('<p style="padding: 20px; text-align: center; color: #64748b; font-family: sans-serif;">Atenção: Para o app funcionar corretamente, abra-o através de um servidor local ou publique no GitHub/Firebase.</p>');
-      }
-    </script>
-  </body>
+
+  <!-- Caminho Relativo para o CSS -->
+  <link rel="stylesheet" href="./index.css">
+</head>
+
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <div id="root"></div>
+
+  <!-- Chamada do TSX com caminhos relativos e Babel -->
+  <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
+
+  <script>
+    // Registro do Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+      });
+    }
+  </script>
+</body>
+
 </html>
