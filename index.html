@@ -2,44 +2,34 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Eletro App - Soluções Elétricas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ELETROPRO - Gestão Profissional de Orçamentos</title>
     
     <!-- PWA Configs -->
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#d97706" />
+    <meta name="theme-color" content="#f59e0b" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Eletro App">
+    <meta name="apple-mobile-web-app-title" content="EletroPro">
     
-    <!-- Ícones do App (Salve sua imagem como icon.png na pasta do projeto) -->
+    <!-- Ícones -->
     <link rel="icon" type="image/png" href="./icon.png" />
     <link rel="apple-touch-icon" href="./icon.png">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Babel para compilar TSX no navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- CORREÇÃO TELA BRANCA: Definir process.env globalmente antes de carregar o app -->
-    <script>
-      window.process = {
-        env: {
-          API_KEY: '' // A chave deve ser inserida aqui se desejar usar IA, ou carregada de outra forma. No GitHub Pages público, cuidado ao expor chaves.
-        }
-      };
-    </script>
-
+    <!-- Tailwind via CDN for rapid development (ideally compiled in production) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             },
             colors: {
-              electric: {
+              amber: {
                 50: '#fffbeb',
                 100: '#fef3c7',
                 200: '#fde68a',
@@ -56,41 +46,51 @@
         }
       }
     </script>
+    
+    <!-- Import Map for ESM Modules -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "@google/genai": "https://esm.sh/@google/genai@0.21.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.469.0"
+      }
+    }
+    </script>
+    
+    <!-- Custom Style Bundle -->
+    <link rel="stylesheet" href="/index.css">
+    
     <style>
+      /* Smooth Transitions */
+      * { transition: background-color 0.2s, border-color 0.2s; }
+      
+      /* Active state for mobile touches */
+      .active-scale:active { transform: scale(0.95); }
+      
+      /* Print Setup */
       @media print {
-        .no-print {
-          display: none !important;
-        }
-        .print-only {
-          display: block !important;
-        }
-        body {
-          background: white;
-        }
-        #root {
-          padding: 0;
-        }
+        @page { size: auto; margin: 0; }
+        body { margin: 0; background: white; }
+        .no-print { display: none !important; }
+        #root { padding: 0 !important; }
+        .print-card { box-shadow: none !important; border: none !important; margin: 0 !important; border-radius: 0 !important; width: 100% !important; }
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-gray-50 text-gray-900 antialiased overscroll-none">
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
     <div id="root"></div>
     
-    <!-- Carregamos tudo de um único arquivo para evitar erros de importação no GitHub Pages -->
-    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <!-- Main Application Script -->
+    <!-- Using Vite's module loader -->
+    <script type="module" src="/index.tsx"></script>
+    
+    <!-- Fallback for older browsers or simple file opening (keeping it for safety if they don't run a server) -->
+    <script>
+      if (window.location.protocol === 'file:') {
+        document.write('<p style="padding: 20px; text-align: center; color: #64748b; font-family: sans-serif;">Atenção: Para o app funcionar corretamente, abra-o através de um servidor local ou publique no GitHub/Firebase.</p>');
+      }
+    </script>
+  </body>
 </html>
