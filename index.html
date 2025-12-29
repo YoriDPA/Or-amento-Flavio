@@ -21,7 +21,6 @@
     rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Babel para compilar TSX no navegador (Essencial para GitHub Pages sem build) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script>
@@ -36,29 +35,27 @@
     }
   </script>
 
+  <!-- CORREÇÃO DAS VERSÕES AQUI -->
   <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@19.0.0",
         "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-        "@google/genai": "https://esm.sh/@google/genai@0.21.0",
+        "@google/genai": "https://esm.sh/@google/genai@1.33.0",
         "lucide-react": "https://esm.sh/lucide-react@0.469.0"
       }
     }
     </script>
 
-  <!-- Caminho Relativo para o CSS -->
   <link rel="stylesheet" href="./index.css">
 </head>
 
 <body class="bg-slate-50 text-slate-900 antialiased">
   <div id="root"></div>
 
-  <!-- Chamada do TSX com caminhos relativos e Babel -->
   <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
 
   <script>
-    // Registro do Service Worker para PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
